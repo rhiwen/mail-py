@@ -20,7 +20,9 @@ if __name__ == "__main__":
     # 4. Listar mensajes de los usuarios
     print("\n--- Revisando Bandejas ---")
     if usuario1:
+        print(f"\n📮 {usuario1.nombre}:")
         usuario1.listar_bandeja_entrada()
     
     if usuario2:
+        print(f"\n📮 {usuario2.nombre}:")
         usuario2.listar_bandeja_entrada()

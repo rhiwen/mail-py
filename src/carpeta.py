@@ -4,12 +4,10 @@ from src.interfaces import IListable
 class Carpeta(IListable):
     """
     Representa un nodo en el árbol general de carpetas.
-    Ahora contiene mensajes Y referencias a sus subcarpetas (recursividad).
     """
     def __init__(self, nombre):
         self._nombre = nombre
         self._mensajes = []
-        # El conjunto de subcarpetas es la clave de la recursividad (árbol general)
         self._subcarpetas = {}
 
     @property
@@ -18,28 +16,46 @@ class Carpeta(IListable):
 
     @property
     def subcarpetas(self):
-        """Permite acceder al diccionario de subcarpetas."""
         return self._subcarpetas
 
     def agregar_mensaje(self, mensaje):
-        """Agrega un mensaje directamente a esta carpeta (nodo)."""
         self._mensajes.append(mensaje)
         
     def eliminar_mensaje_por_id(self, id_mensaje):
         """
-        Busca y elimina un mensaje de la colección de mensajes de esta carpeta.
-        Se usa el ID para evitar ambigüedades.
+        Busca y elimina un mensaje de la colección de mensajes de ESTA carpeta.
+        Se usa el ID para evitar ambigüedades. Retorna el mensaje si lo encuentra, sino None.
+        (Método no recursivo: solo actúa sobre los mensajes de este nodo.)
         """
-        # Se usa una lista por comprensión para eliminar de forma segura
         mensaje_encontrado = None
-        
-        # Iterar y buscar el mensaje por ID (string)
         for i, mensaje in enumerate(self._mensajes):
-            if mensaje.id == id_mensaje:
+            if mensaje.id == id_mensaje: 
                 mensaje_encontrado = self._mensajes.pop(i)
                 break
-        
         return mensaje_encontrado
+
+    # --- Implementación Clave para MOVER (Corrección Entrega 2) ---
+
+    def extraer_mensaje_recursivo_por_id(self, id_mensaje):
+        """
+        Implementa DFS para buscar el mensaje por ID de forma recursiva
+        en esta carpeta y en todas sus subcarpetas. Lo EXTRAE (elimina) al encontrarlo.
+        
+        Retorna el mensaje encontrado y extraído, o None.
+        """
+        # 1. Intentar extraer de la carpeta actual (Nodo)
+        mensaje = self.eliminar_mensaje_por_id(id_mensaje)
+        if mensaje:
+            return mensaje
+
+        # 2. Llamada Recursiva para las Subcarpetas (Nodos Hijos)
+        for subcarpeta in self._subcarpetas.values():
+            mensaje_encontrado = subcarpeta.extraer_mensaje_recursivo_por_id(id_mensaje)
+            if mensaje_encontrado:
+                # Si se encontró y extrajo en cualquier descendiente, propagamos el resultado
+                return mensaje_encontrado
+                
+        return None # No se encontró en este sub-árbol
 
     # --- Métodos del Árbol General ---
 

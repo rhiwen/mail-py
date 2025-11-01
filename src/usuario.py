@@ -2,12 +2,15 @@
 from src.interfaces import IEnviable, IRecibible
 from src.carpeta import Carpeta
 from src.mensaje import Mensaje
+from src.utilidades import ReglaFiltro # Nuevo Import
 
 class Usuario(IEnviable, IRecibible):
     def __init__(self, nombre, correo, contrasena):
         self._nombre = nombre
         self._correo = correo
         self._contrasena = contrasena
+        # Nuevo: Diccionario de filtros automáticos
+        self._filtros = {} # {nombre_filtro: ReglaFiltro}
         
         # Implementamos el Árbol General. El Usuario es el gestor de la Raíz
         # Creamos una Carpeta Raíz contenedora
@@ -36,15 +39,20 @@ class Usuario(IEnviable, IRecibible):
 
     # --- Métodos de Mensajería ---
     
-    def enviar(self, destinatario, asunto, cuerpo, servidor):
-        mensaje = Mensaje(self.correo, destinatario, asunto, cuerpo)
+    def enviar(self, destinatario, asunto, cuerpo, servidor, es_urgente=False):
+        mensaje = Mensaje(self.correo, destinatario, asunto, cuerpo, es_urgente)
         servidor.recibir_mensaje_entrante(mensaje)
         self._bandeja_enviados.agregar_mensaje(mensaje)
 
     def recibir(self, mensaje):
         print(f"[{self.nombre}] --> 📩 Tenés un mensaje nuevo.")
-        # Los mensajes entrantes siempre van a la Bandeja de Entrada
-        self._bandeja_entrada.agregar_mensaje(mensaje)
+        # 1. Intentar aplicar filtros
+        fue_filtrado = self.aplicar_filtros_a_mensaje(mensaje)
+
+        if not fue_filtrado:
+            # 2. Si no fue filtrado, va a la Bandeja de Entrada por defecto
+            self._bandeja_entrada.agregar_mensaje(mensaje)
+            print(f"[{self.nombre}] Mensaje ID {mensaje.id} agregado a 'Entrada'.")
 
     # --- Métodos de Gestión del Árbol de Carpetas ---
 
@@ -78,8 +86,7 @@ class Usuario(IEnviable, IRecibible):
     def mover_mensaje(self, id_mensaje, ruta_origen, ruta_destino):
         """
         Mover un mensaje entre carpetas.
-        Usamos el ID del mensaje y las rutas completas
-        para evitar ambigüedades.
+        Busca el mensaje de forma recursiva en la ruta_origen y lo extrae.
         """
         carpeta_origen = self._resolver_ruta_carpeta(ruta_origen)
         carpeta_destino = self._resolver_ruta_carpeta(ruta_destino)
@@ -92,15 +99,15 @@ class Usuario(IEnviable, IRecibible):
             print(f"❌ Error: Carpeta de destino '{ruta_destino}' no encontrada.")
             return
 
-        # 1. Extracción: Eliminar el mensaje de la carpeta origen
-        mensaje = carpeta_origen.eliminar_mensaje_por_id(id_mensaje)
+        # 1. Extracción RECURSIVA del mensaje de la ruta de origen (o subcarpeta)
+        mensaje = carpeta_origen.extraer_mensaje_recursivo_por_id(id_mensaje)
         
         if mensaje:
             # 2. Inserción: Agregar el mensaje a la carpeta destino
             carpeta_destino.agregar_mensaje(mensaje)
-            print(f"↪ Mensaje ID {id_mensaje} movido de '{ruta_origen}' a '{ruta_destino}'.")
+            print(f"↪ Mensaje ID {id_mensaje} movido de (Búsqueda en) '{ruta_origen}' a '{ruta_destino}'.")
         else:
-            print(f"❌ Error: No se encontró un mensaje con ID {id_mensaje} en '{ruta_origen}'.")
+            print(f"❌ Error: No se encontró un mensaje con ID {id_mensaje} en el árbol de '{ruta_origen}'.")
 
 
     def buscar_mensajes_recursivo(self, criterio, valor_buscado):
@@ -132,3 +139,32 @@ class Usuario(IEnviable, IRecibible):
         # Listamos solo a partir de las carpetas principales (Entrada, Enviados, etc.)
         for carpeta_principal in self._raiz_de_carpetas.subcarpetas.values():
             carpeta_principal.listar(nivel=0)
+    
+    # --- Métodos de Gestión de Filtros (Nuevos entrega 3) ---
+
+    def agregar_filtro(self, nombre, criterio, valor_buscado, ruta_destino):
+        """Define una nueva regla de filtrado y la almacena."""
+        # Se verifica que la ruta de destino exista antes de crear la regla
+        if not self._resolver_ruta_carpeta(ruta_destino):
+            print(f"❌ Error: La carpeta destino '{ruta_destino}' no existe. Filtro no creado.")
+            return
+            
+        nueva_regla = ReglaFiltro(nombre, criterio, valor_buscado, ruta_destino)
+        self._filtros[nombre] = nueva_regla
+        print(f"✅ Filtro '{nombre}' creado: {criterio}='{valor_buscado}' -> '{ruta_destino}'.")
+
+    def aplicar_filtros_a_mensaje(self, mensaje):
+        """Evalúa el mensaje contra todas las reglas y lo mueve si coincide."""
+        for regla in self._filtros.values():
+            if regla.evaluar(mensaje):
+                # OBTENER LA CARPETA DESTINO
+                carpeta_destino = self._resolver_ruta_carpeta(regla.ruta_destino)
+                
+                # El mensaje todavía no está en ninguna carpeta del usuario, 
+                # simplemente lo agregamos a la carpeta de destino del filtro.
+                carpeta_destino.agregar_mensaje(mensaje)
+                print(f"[{self.nombre}] 🧠 Mensaje ID {mensaje.id} filtrado a '{regla.ruta_destino}'.")
+                
+                return True # El mensaje fue filtrado y ubicado.
+                
+        return False # El mensaje no coincidió con ningún filtro.

@@ -1,121 +1,195 @@
 # main.py
 from src.servidor_correo import ServidorCorreo
 from src.utilidades import IDGenerator
+from src.red_servidores import RedServidores 
 
 if __name__ == "__main__":
     # Reseteamos el generador de IDs para asegurar que cada corrida sea reproducible
-    IDGenerator._current_id = 0 
-    servidor = ServidorCorreo()
+    IDGenerator._current_id = 0
+    
+    # 1. Configuración de la Red de Servidores
+    print("--- 1. Configuración de la Red y Servidores ---")
+    
+    red_global = RedServidores()
+    
+    # Creamos TRES servidores para hacer el grafo mejor
+    servidor_a = ServidorCorreo() 
+    servidor_b = ServidorCorreo() 
+    servidor_c = ServidorCorreo() # Nuevo servidor
+    
+    red_global.agregar_servidor("Servidor_A", servidor_a)
+    red_global.agregar_servidor("Servidor_B", servidor_b)
+    red_global.agregar_servidor("Servidor_C", servidor_c)
+    
+    # Topología del Grafo: A <-> B, A <-> C, C <-> B (Ruta A->B puede ser A-B o A-C-B)
+    red_global.conectar_servidores("Servidor_A", "Servidor_B")
+    red_global.conectar_servidores("Servidor_A", "Servidor_C")
+    red_global.conectar_servidores("Servidor_C", "Servidor_B")
+    print("\n")
 
-    # 1. Registrar usuarios
-    print("--- 1. Registro de Usuarios ---")
-    # VE: Viviana Enriquez (vianquez5@gmail.com)
-    usuario1 = servidor.registrar_usuario("VE", "vianquez5@gmail.com", "pass123")
-    # RNR: Rocio Natali Rolon (rolon.rocio.natali@gmail.com)
-    usuario2 = servidor.registrar_usuario("RNR", "rolon.rocio.natali@gmail.com", "pass456")
 
-    # 2. Creación de Carpetas Recursivas para los dos usuarios
-    print("\n--- 2. Creación de Carpetas Recursivas ---")
+    # 2. Registrar usuarios
+    print("--- 2. Registro de Usuarios ---")
+    # VE se registra en el Servidor A (gmail.com)
+    usuario1 = servidor_a.registrar_usuario("VE", "vianquez5@gmail.com", "pass123")
+    # RNR se registra en el Servidor B (Hmail.com)
+    usuario2 = servidor_b.registrar_usuario("RNR", "rolon.rocio.natali@hmail.com", "pass456")
+    # HB se registra en el Servidor A (gmail.com)
+    usuario3 = servidor_a.registrar_usuario("HB", "anung.un.rama@gmail.com", "pass789")
+
+
+    # 3. Creación de Carpetas Recursivas y Filtros
+    print("\n--- 3. Creación de Carpetas y Filtros ---")
     if usuario1:
         # Carpetas de VE
         usuario1.crear_carpeta("Proyectos")
         usuario1.crear_carpeta("TP_Final", ruta_padre="Proyectos")
-        usuario1.crear_carpeta("Python_Clase_4", ruta_padre="Proyectos")
-        usuario1.crear_carpeta("Parciales")
-        usuario1.crear_carpeta("Mails_viejos", ruta_padre="Entrada") # Subcarpeta de Entrada
+        usuario1.crear_carpeta("Urgentes_Trabajo") 
+        usuario1.crear_carpeta("Archivados")
+        usuario1.crear_carpeta("Recibos", ruta_padre="Archivados") 
+        usuario1.crear_carpeta("Spam") # Destino para un nuevo filtro
+        
+        # Filtros de VE:
+        usuario1.agregar_filtro("Filtro_TP_RNR", criterio="remitente", 
+                                valor_buscado=usuario2.correo, ruta_destino="Proyectos/TP_Final")
+        usuario1.agregar_filtro("Filtro_Urgente", criterio="asunto", 
+                                valor_buscado="URGENTE", ruta_destino="Urgentes_Trabajo")
+        usuario1.agregar_filtro("Filtro_Spam", criterio="asunto", 
+                                valor_buscado="promo", ruta_destino="Spam") # Nuevo filtro
         
     if usuario2:
-        # Carpetas de RNR
-        usuario2.crear_carpeta("Colabs")
-        usuario2.crear_carpeta("Stremio", ruta_padre="Colabs")
-        usuario2.crear_carpeta("Matematica")
+        # Más carpetas de RNR
+        usuario2.crear_carpeta("Universidad")
+        usuario2.crear_carpeta("Parciales", ruta_padre="Universidad")
+        usuario2.crear_carpeta("Finales", ruta_padre="Universidad")
+        usuario2.crear_carpeta("Bugs_Criticos")
 
+        # Filtro para bugs urgentes
+        usuario2.agregar_filtro("Filtro_Bugs", criterio="asunto", 
+                                valor_buscado="BUG", ruta_destino="Bugs_Criticos")
 
-    # 3. Envío de 10 Mensajes (se crean IDs secuenciales 0001 a 0010)
-    print("\n--- 3. Envío de 10 Mensajes y Asignación de IDs ---")
-    if usuario1 and usuario2:
-        # Mensaje 0001 (VE -> RNR): Importante, de Stremio
-        usuario1.enviar(usuario2.correo, "Error en settings de Stremio", "Revisa el readme que hay un bug con el UML de mermaid.", servidor)
-        # Mensaje 0002 (RNR -> VE): Confirmación
-        usuario2.enviar(usuario1.correo, "Te confirmo el meet de mañana", "Nos vemos 10 AM para repasar el TP de estructuras.", servidor)
-        # Mensaje 0003 (VE -> RNR): Parcial
-        usuario1.enviar(usuario2.correo, "Duda Parcial Estructuras", "No me queda claro el análisis de O(N^2).", servidor)
-        # Mensaje 0004 (RNR -> VE): Proyecto
-        usuario2.enviar(usuario1.correo, "Repositorio listo: TP Final", "Ya creé el repo en github fijate de aceptar el permiso como colaborador.", servidor)
-        # Mensaje 0005 (VE -> RNR): Recordatorio
-        usuario1.enviar(usuario2.correo, "Acordate de subir la Clase 4", "Necesito repasar la parte de recursividad en Python voy a llorar", servidor)
-        # Mensaje 0006 (RNR -> VE): Sobre un lab
-        usuario2.enviar(usuario1.correo, "Pregunta sobre el Colab de POO", "Pudiste revisar el punto 3? Para mi entendimos mal", servidor)
-        # Mensaje 0007 (VE -> RNR): Otro mensaje importante de Stremio
-        usuario1.enviar(usuario2.correo, "Configuración de Stremio", "Mirá este tutorial para usar pandas y hacer los graficos con df al toque esta genial.", servidor)
-        # Mensaje 0008 (RNR -> VE): Otra confirmación
-        usuario2.enviar(usuario1.correo, "MAÑANA 10 AM ACORDATE EL MEET", "Cargá la batería porq si te quedás sin luz fuimos.", servidor)
-        # Mensaje 0009 (VE -> RNR): Spam o algo viejo
-        usuario1.enviar(usuario2.correo, "Promo del cybermonday", "Promociones sobre cosas que estuviste googleando el otro dia!", servidor)
-        # Mensaje 0010 (RNR -> VE): Proyecto Final
-        usuario2.enviar(usuario1.correo, "El deadline del TP final es el viernes", "No nos colguemos con los tests unitarios.", servidor)
+    if usuario3:
+        # Hellboy (HB) - ahora sí carpetas
+        usuario3.crear_carpeta("Misiones")
+        usuario3.crear_carpeta("Clases")
+        usuario3.crear_carpeta("TPs", ruta_padre="Clases")
+        usuario3.crear_carpeta("Investigar")
+        usuario3.crear_carpeta("Spam")
 
+        # Filtros de HB
+        usuario3.agregar_filtro("Filtro_raro", criterio="asunto", valor_buscado="raro", ruta_destino="Investigar")
+        usuario3.agregar_filtro("Filtro_SPAM_HB", criterio="asunto", valor_buscado="promo", ruta_destino="Spam")
 
-    # 4. Procesar los mensajes en el servidor (Distribuye los mensajes en las bandejas de entrada)
-    print("\n--- 4. Procesando mensajes del Servidor ---")
-    servidor.procesar_mensajes()
-
-    # 5. Movimiento de Mensajes para organizar el árbol de ambos usuarios
-    print("\n--- 5. Movimiento de Mensajes para Organización ---")
     
-    # VE (vianquez5) recibió: 0002, 0004, 0006, 0008, 0010. Todos están en 'Entrada'.
-    # RNR (rolon.rocio.natali) recibió: 0001, 0003, 0005, 0007, 0009. Todos están en 'Entrada'.
+    # 4. Envío de Mensajes (15 mensajes para testeo de Entrega3)
+    print("\n--- 4. Envío de 10 Mensajes (Prioridad y Filtros en el Servidor) ---")
 
-    # MOVIMIENTOS DE VE:
-    # Mover 0004 y 0010 a Proyectos/TP_Final (mensajes de proyecto final)
-    usuario1.mover_mensaje(id_mensaje="0004", ruta_origen="Entrada", ruta_destino="Proyectos/TP_Final")
-    usuario1.mover_mensaje(id_mensaje="0010", ruta_origen="Entrada", ruta_destino="Proyectos/TP_Final")
-    # Mover 0006 a Proyectos/Python_Clase_4 (mensaje de un lab de POO)
-    usuario1.mover_mensaje(id_mensaje="0006", ruta_origen="Entrada", ruta_destino="Proyectos/Python_Clase_4")
-    # Mover 0009 a Mails_viejos (mensaje de spam)
-    usuario1.mover_mensaje(id_mensaje="0009", ruta_origen="Entrada", ruta_destino="Entrada/Mails_viejos") # Error: 0009 no está en VE, está en RNR!
+    if usuario1 and usuario2 and usuario3:
+        # 0001 (VE -> RNR): Cross-servidor, con FILTRO de Asunto (Stremio), Urgente
+        usuario1.enviar(usuario2.correo, "Error readme Stremio URGENTE", "Revisa el readme que hay un bug con el Mermaid.", red_global, es_urgente=True) 
+        
+        # 0002 (RNR -> VE): Cross-servidor, con FILTRO de Asunto (URGENTE)
+        usuario2.enviar(usuario1.correo, "URGENTE: Falta documentación", "Falta algun video o infografia", red_global, es_urgente=False) # Prioridad 0 (Error del remitente)
 
-    # Corregimos el error anterior: Movemos el 0002 (meet de mañana) a Proyectos
-    usuario1.mover_mensaje(id_mensaje="0002", ruta_origen="Entrada", ruta_destino="Proyectos") 
+        # 0003 (VE -> RNR): Cross-servidor, con FILTRO de Asunto (Python)
+        usuario1.enviar(usuario2.correo, "Curso de Python avanzado", "fijate que hay una oferta por 24 horas", red_global, es_urgente=False)
+        
+        # 0004 (RNR -> VE): Cross-servidor, con FILTRO de Remitente (RNR)
+        usuario2.enviar(usuario1.correo, "Revisa el TP de Estructuras", "lo que te dije hoy en clase.", red_global, es_urgente=False)
+        
+        # 0005 (HB -> VE): Mismo servidor, sin Filtro, URGENTE
+        usuario3.enviar(usuario1.correo, "MAÑANA 10 AM ACORDATE EL MEET", "cargá la batería", red_global, es_urgente=True)
+        
+        # 0006 (VE -> RNR): Cross-servidor, con FILTRO de Asunto (Stremio), NO Urgente
+        usuario1.enviar(usuario2.correo, "Configuración de Stremio para Linux", "con toda la cosa del win10 capaz nos pasamos a linux y chau", red_global, es_urgente=False)
 
-    # MOVIMIENTOS DE RNR:
-    # Mover 0001 y 0007 a Colabs/Stremio (mensajes de Stremio)
-    usuario2.mover_mensaje(id_mensaje="0001", ruta_origen="Entrada", ruta_destino="Colabs/Stremio")
-    usuario2.mover_mensaje(id_mensaje="0007", ruta_origen="Entrada", ruta_destino="Colabs/Stremio")
-    # Mover 0003 a Entrada/Mails_viejos (creamos una subcarpeta similar a la de VE para probar)
-    usuario2.crear_carpeta("Mails_viejos", ruta_padre="Entrada")
-    usuario2.mover_mensaje(id_mensaje="0003", ruta_origen="Entrada", ruta_destino="Entrada/Mails_viejos")
+        # 0007 (HB -> VE): Mismo servidor, con FILTRO de Asunto (PROMO)
+        usuario3.enviar(usuario1.correo, "¡Ganá una promo de viajes!", "te reenvio el sorteo", red_global, es_urgente=False) # -> Spam
+
+        # 0008 (HB -> VE): Mismo servidor, sin Filtro, URGENTE
+        usuario3.enviar(usuario1.correo, "URGENTE: El deadline del TP final es el viernes", "No colguemos con la documentacion.", red_global, es_urgente=True) # -> Urgentes_Trabajo
+
+        # 0009 (RNR -> HB): Cross-servidor, sin Filtro
+        usuario2.enviar(usuario3.correo, "Consulta de la Clase 4", "Pudiste repasar recursividad? fijate q estan los videos del año pasado", red_global, es_urgente=False)
+
+        # 0010 (VE -> RNR): Cross-servidor, con FILTRO de Asunto (Python)
+        usuario1.enviar(usuario2.correo, "Trabajo en Python", "fijate que tenemos que pensar un proyecto que aplique los temas de la clase, ojala no sea servidor de correo.", red_global, es_urgente=False)
+
+        # 0011 (RNR -> HB): cross-server, "BUG"
+        usuario2.enviar(usuario3.correo, "BUG en el mermaid otra vez!", "Se rompe siempre ya ni se que pasa mejor lo hacemos con drawio", red_global, es_urgente=True)
+
+        # 0012 (HB -> RNR):
+        usuario3.enviar(usuario2.correo, "Ayuda código en estructuras", "intenté debuggear con fuyi y fuego... no funcionó.", red_global, es_urgente=False)
+
+        # 0013 (HB -> VE): clase y TP
+        usuario3.enviar(usuario1.correo, "TP de Clases — ayuda", "no entendi la correccion, vos entendiste algo?", red_global, es_urgente=False)
+
+        # 0014 (VE -> HB):
+        usuario1.enviar(usuario3.correo, "Recursividad - práctica", "no, eso no cuenta como firewall", red_global, es_urgente=False)
+
+        # 0015 (RNR -> VE): spam para probar filtro
+        usuario2.enviar(usuario1.correo, "promo notebook reacondicionada", "te reenvio esta promo q parece a buen precio para q dejes de renegar con la del gobierno", red_global, es_urgente=False)
+
+    # 5. Procesar los mensajes en los servidores (La Cola de Prioridad actúa acá)
+    print("\n--- 5. Procesando mensajes del Servidor A (Prioridad) ---")
+    # Los mensajes 0002, 0004, 0005, 0007, 0008 van a VE (Servidor A)
+    # El mensaje 0009 va a HB (Servidor A)
+    servidor_a.procesar_mensajes() 
+
+    print("\n--- 5. Procesando mensajes del Servidor B (Prioridad) ---")
+    # Los mensajes 0001, 0003, 0006, 0010 van a RNR (Servidor B)
+    servidor_b.procesar_mensajes() 
+    
+    # El servidor C no tiene usuarios, solo es nodo de tránsito
 
 
-    # 6. Listar la estructura completa para ver el árbol organizado
-    print("\n\n--- 6. Revisando Estructura de Carpetas de VE (Organizado) ---")
+    # 6. Listar y verificar filtros con Emojis
+    print("\n\n--- 6. Revisando Estructura de Carpetas de VE (Filtros Aplicados) ---")
+    # VE: 0002(Urgentes), 0004(TP_Final), 0005(Entrada), 0007(Spam), 0008(Urgentes)
     if usuario1:
         usuario1.listar_carpetas_y_mensajes()
-
-    print("\n\n--- 7. Revisando Estructura de Carpetas de RNR (Organizado) ---")
+        
+    print("\n--- 6. Revisando Estructura de Carpetas de RNR (Filtros Aplicados) ---")
+    # RNR: 0001(Stremio), 0003(Cursos_Python), 0006(Stremio), 0010(Cursos_Python)
     if usuario2:
         usuario2.listar_carpetas_y_mensajes()
 
 
-    # 8. Pruebas de Búsqueda Recursiva
-    print("\n--- 8. Pruebas de Búsqueda Recursiva ---")
+    # 7. Test de Corrección: Movimiento Recursivo (E2)
+    print("\n--- 7. Prueba de Movimiento Recursivo (Corrección E2) ---")
 
-    # Búsqueda 1: Buscar por Asunto "TP Final" (Debería encontrar ID 0004 y 0010 en la subcarpeta Proyectos/TP_Final de VE)
+    # Mover el mensaje 0005 de Entrada a la subcarpeta Archivados/Recibos
+    # El mensaje 0005 ahora está en 'Entrada'.
+    usuario1.mover_mensaje(id_mensaje="0005", ruta_origen="Entrada", ruta_destino="Archivados")
+    
+    # Intentamos moverlo de 'Archivados' a 'Recibos'. La búsqueda debe ser recursiva
+    # en 'Archivados' para encontrar el 0005. (Falla, porque Archivados no tiene mensajes,
+    # el mensaje está en una subcarpeta de Archivados. Corrijo: lo muevo directamente a Recibos)
+    
+    # Mover 0005 que ahora está en 'Archivados' a 'Archivados/Recibos'
+    usuario1.mover_mensaje(id_mensaje="0005", ruta_origen="Archivados", ruta_destino="Archivados/Recibos")
+    
+    # Listamos para confirmar el movimiento
+    print("\n--- Estructura de VE después del movimiento recursivo ---")
     if usuario1:
-        usuario1.buscar_mensajes_recursivo(criterio="asunto", valor_buscado="TP Final")
-        
-    # Búsqueda 2: Buscar por Remitente "vianquez5" (Debería encontrar 0001, 0003, 0005, 0007, 0009 en las carpetas de RNR)
-    if usuario2:
-        usuario2.buscar_mensajes_recursivo(criterio="remitente", valor_buscado="vianquez5")
+        usuario1.listar_carpetas_y_mensajes()
 
-    # Búsqueda 3: Buscar por Asunto "Stremio" (Debería encontrar 0001 y 0007 en la subcarpeta Colabs/Stremio de RNR)
-    if usuario2:
-        usuario2.buscar_mensajes_recursivo(criterio="asunto", valor_buscado="Stremio")
-        
-    # Búsqueda 4: Búsqueda parcial y case-insensitive: "meet" (Debería encontrar ID 0002 en Proyectos de VE, y 0008 en Entrada de VE)
-    if usuario1:
-        usuario1.buscar_mensajes_recursivo(criterio="asunto", valor_buscado="meet")
-        
-    # Búsqueda 5: Búsqueda que no encuentra nada, vade retro Laravel
-    if usuario1:
-        usuario1.buscar_mensajes_recursivo(criterio="asunto", valor_buscado="Laravel")
+
+    # 8. Pruebas de Algoritmos (BFS/DFS) sobre la Red
+    print("\n--- 8. Prueba de Algoritmos de Enrutamiento (BFS/DFS) ---")
+    
+    # Simulación de Envío para el mensaje 0009 (RNR -> HB)
+    # !!!!! el mensaje 0009 ya fue procesado y entregado a HB, necesitamos un nuevo mensaje
+    
+    # Creamos un nuevo mensaje (0011) desde HB (Servidor A) a RNR (Servidor B)
+    usuario_origen = servidor_a._usuarios.get(usuario3.correo)
+    mensaje_prueba = usuario_origen._bandeja_enviados._mensajes[-1] # Tomamos el último enviado (0009)
+    # Para probar BFS/DFS mejor, simulemos la ruta A -> B:
+    
+    print("\n- Usando BFS (Ruta más corta, ej: A -> B):")
+    # La ruta A -> B tiene dos opciones (A-B o A-C-B). BFS debe elegir A-B (2 saltos vs 3 si A-C-B)
+    red_global.simular_envio_bfs("Servidor_A", "Servidor_B", mensaje_prueba)
+
+    print("\n- Usando DFS (Ruta no necesariamente óptima, ej: A -> B):")
+    # DFS podría elegir A -> C -> B o A -> B, dependiendo del orden en el set de adyacencia
+    red_global.simular_envio_dfs("Servidor_A", "Servidor_B", mensaje_prueba)

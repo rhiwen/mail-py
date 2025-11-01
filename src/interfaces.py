@@ -1,3 +1,4 @@
+# src/interfaces.py
 from abc import ABC, abstractmethod
 
 class IEnviable(ABC):

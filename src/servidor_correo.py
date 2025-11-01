@@ -1,3 +1,4 @@
+# src/servidor_correo.py
 from src.usuario import Usuario
 
 class ServidorCorreo:

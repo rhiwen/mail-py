@@ -5,10 +5,11 @@ from src.mensaje import Mensaje
 from src.utilidades import ReglaFiltro # Nuevo Import
 
 class Usuario(IEnviable, IRecibible):
-    def __init__(self, nombre, correo, contrasena):
+    def __init__(self, nombre, correo, contrasena, nombre_servidor_registro):
         self._nombre = nombre
         self._correo = correo
         self._contrasena = contrasena
+        self._nombre_servidor = nombre_servidor_registro # Guardamos el nombre del servidor
         # Nuevo: Diccionario de filtros automáticos
         self._filtros = {} # {nombre_filtro: ReglaFiltro}
         
@@ -36,12 +37,23 @@ class Usuario(IEnviable, IRecibible):
     @property
     def contrasena(self):
         return self._contrasena
+    
+    @property
+    def nombre_servidor(self):
+        return self._nombre_servidor
 
     # --- Métodos de Mensajería ---
     
-    def enviar(self, destinatario, asunto, cuerpo, servidor, es_urgente=False):
+    def enviar(self, destinatario, asunto, cuerpo, red_global, es_urgente=False): # Cambiamos 'servidor' por 'red_global' para q sea mas claro
+        """
+        Crea un mensaje y lo envía a la red global para su enrutamiento y entrega.
+        """
         mensaje = Mensaje(self.correo, destinatario, asunto, cuerpo, es_urgente)
-        servidor.recibir_mensaje_entrante(mensaje)
+
+        # La RedServidores necesita: Servidor Origen (yo), Destinatario (a dónde va), Mensaje.
+        red_global.simular_envio_bfs(self.nombre_servidor, destinatario, mensaje)
+        
+        # El mensaje se guarda en la carpeta de enviados (independiente del ruteo)
         self._bandeja_enviados.agregar_mensaje(mensaje)
 
     def recibir(self, mensaje):

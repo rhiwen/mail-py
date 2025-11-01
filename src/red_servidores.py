@@ -64,42 +64,87 @@ class RedServidores:
                     cola.append(vecino)
                     
         return None 
+
+    def obtener_servidor_destino(self, correo_destino):
+        """
+        Busca a qué servidor registrado en la red pertenece el correo de destino.
+        Retorna el nombre del servidor o None.
+        """
+        for nombre_srv, servidor_obj in self._nodos.items():
+            if correo_destino in servidor_obj._usuarios:
+                return nombre_srv
+        return None
+
+    def simular_envio_bfs(self, servidor_origen, correo_destino, mensaje):
+        """
+        Simula el envío de un mensaje encontrando la ruta más corta (BFS).
+        """
+        # 1. Encontrar el servidor de destino
+        servidor_destino = self.obtener_servidor_destino(correo_destino)
         
-    def simular_envio_bfs(self, origen, destino, mensaje):
-        """Simular el envío de un mensaje encontrando la ruta más corta (BFS)."""
-        ruta = self.buscar_ruta_bfs(origen, destino)
+        if not servidor_destino:
+            print(f"🚫 Imposible enviar ID {mensaje.id}: Destinatario '{correo_destino}' no encontrado en la red.")
+            return
+            
+        # 2. Si el origen es igual al destino (mismo servidor), no hay ruteo
+        if servidor_origen == servidor_destino:
+            print(f"Enrutamiento: ID {mensaje.id} es local. Entrega directa en '{servidor_destino}'.")
+            servidor_destino_obj = self._nodos[servidor_destino]
+            servidor_destino_obj.recibir_mensaje_entrante(mensaje)
+            return
+
+        # 3. Buscar la ruta BFS
+        ruta = self.buscar_ruta_bfs(servidor_origen, servidor_destino)
         
         if not ruta:
-            print(f"🚫 Imposible enviar ID {mensaje.id}: No hay ruta BFS entre {origen} y {destino}.")
+            print(f"🚫 Imposible enviar ID {mensaje.id}: No hay ruta BFS entre {servidor_origen} y {servidor_destino}.")
             return
 
         print(f"Ruta óptima (BFS) para ID {mensaje.id}: {' -> '.join(ruta)}")
         
-        # El mensaje se envía al servidor de destino para su procesamiento final
-        servidor_destino_obj = self._nodos[destino]
+        # El mensaje se entrega al servidor de destino para su procesamiento
+        servidor_destino_obj = self._nodos[servidor_destino]
         servidor_destino_obj.recibir_mensaje_entrante(mensaje)
         
-    def simular_envio_dfs(self, origen, destino, mensaje):
+    def simular_envio_dfs(self, servidor_origen, correo_destino, mensaje):
         """
         Simular el envío buscando la primera ruta encontrada (DFS).
-        Generalmente no es óptimo, pero cumple con la consigna de implementar DFS.
+        No es lo ideal es para mostrar ambos BFS y DFS segun entendimos de la consigna.
         """
-        pila = [(origen, [origen])] 
-        visitados = {origen}
+        # 1. Encontrar el servidor de destino a partir del correo
+        servidor_destino = self.obtener_servidor_destino(correo_destino)
         
+        if not servidor_destino:
+            print(f"🚫 Imposible enviar ID {mensaje.id}: Destinatario '{correo_destino}' no encontrado en la red.")
+            return
+
+        # 2. Caso de entrega local (origen == destino)
+        if servidor_origen == servidor_destino:
+            print(f"Enrutamiento: ID {mensaje.id} es local. Entrega directa en '{servidor_destino}'.")
+            servidor_destino_obj = self._nodos[servidor_destino]
+            servidor_destino_obj.recibir_mensaje_entrante(mensaje)
+            return
+
+        # 3. Lógica del Algoritmo DFS (se usa servidor_origen y servidor_destino como nodos)
+        pila = [(servidor_origen, [servidor_origen])] 
+        visitados = {servidor_origen}
+
         while pila:
             actual, camino = pila.pop()
             
-            if actual == destino:
+            # ¡El destino ahora es el nombre del servidor!
+            if actual == servidor_destino: 
                 print(f"Ruta encontrada (DFS) para ID {mensaje.id}: {' -> '.join(camino)}")
-                servidor_destino_obj = self._nodos[destino]
+                # Se entrega el mensaje al objeto ServidorCorreo de destino
+                servidor_destino_obj = self._nodos[servidor_destino] 
                 servidor_destino_obj.recibir_mensaje_entrante(mensaje)
                 return
-            
+
             for vecino in self._grafo[actual]:
                 if vecino not in visitados:
                     visitados.add(vecino)
                     nuevo_camino = camino + [vecino]
                     pila.append((vecino, nuevo_camino))
                     
-        print(f"🚫 Imposible enviar ID {mensaje.id}: No se encontró ruta (DFS) entre {origen} y {destino}.")
+        # 4. No se encontró ruta
+        print(f"🚫 Imposible enviar ID {mensaje.id}: No se encontró ruta (DFS) entre {servidor_origen} y {servidor_destino}.")

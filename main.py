@@ -13,9 +13,9 @@ if __name__ == "__main__":
     red_global = RedServidores()
     
     # Creamos TRES servidores para hacer el grafo mejor
-    servidor_a = ServidorCorreo() 
-    servidor_b = ServidorCorreo() 
-    servidor_c = ServidorCorreo() # Nuevo servidor
+    servidor_a = ServidorCorreo("Servidor_A") 
+    servidor_b = ServidorCorreo("Servidor_B") 
+    servidor_c = ServidorCorreo("Servidor_C") # Nuevo servidor
     
     red_global.agregar_servidor("Servidor_A", servidor_a)
     red_global.agregar_servidor("Servidor_B", servidor_b)

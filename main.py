@@ -176,7 +176,9 @@ if __name__ == "__main__":
 
 
     # 8. Pruebas de Algoritmos (BFS/DFS) sobre la Red
+    # ❌❌❌IMPORTANTE: No llegamos a corregir estos ejemplos!❌❌❌
     print("\n--- 8. Prueba de Algoritmos de Enrutamiento (BFS/DFS) ---")
+    print("\n---❌❌❌ IMPORTANTE: No llegamos a corregir estos ejemplos! ❌❌❌---")
     
     # Simulación de Envío para el mensaje 0009 (RNR -> HB)
     # !!!!! el mensaje 0009 ya fue procesado y entregado a HB, necesitamos un nuevo mensaje

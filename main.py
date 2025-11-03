@@ -176,22 +176,52 @@ if __name__ == "__main__":
 
 
     # 8. Pruebas de Algoritmos (BFS/DFS) sobre la Red
-    # ❌❌❌IMPORTANTE: No llegamos a corregir estos ejemplos!❌❌❌
     print("\n--- 8. Prueba de Algoritmos de Enrutamiento (BFS/DFS) ---")
-    print("\n---❌❌❌ IMPORTANTE: No llegamos a corregir estos ejemplos! ❌❌❌---")
     
-    # Simulación de Envío para el mensaje 0009 (RNR -> HB)
-    # !!!!! el mensaje 0009 ya fue procesado y entregado a HB, necesitamos un nuevo mensaje
+    # 8.1. Configuración adicional para rutas alternativas (Servidor C ya está conectado)
     
-    # Creamos un nuevo mensaje (0011) desde HB (Servidor A) a RNR (Servidor B)
-    usuario_origen = servidor_a._usuarios.get(usuario3.correo)
-    mensaje_prueba = usuario_origen._bandeja_enviados._mensajes[-1] # Tomamos el último enviado (0009)
-    # Para probar BFS/DFS mejor, simulemos la ruta A -> B:
+    # Creamos un nuevo mensaje (0011) desde TP (Servidor A) a RNR (Servidor B)
+    # 🚨 NOTA: Para esta prueba, no usamos Usuario.enviar, sino que creamos un mensaje
+    # y usamos los ruteadores directamente para SIMULAR el camino que tomaría.
     
-    print("\n- Usando BFS (Ruta más corta, ej: A -> B):")
-    # La ruta A -> B tiene dos opciones (A-B o A-C-B). BFS debe elegir A-B (2 saltos vs 3 si A-C-B)
-    red_global.simular_envio_bfs("Servidor_A", "Servidor_B", mensaje_prueba)
+    # El IDGenerator ya está en 0011 si se enviaron 10 mensajes antes
+    IDGenerator._current_id += 1 # Aseguramos un ID nuevo (ej: 0012)
+    
+    # Creamos el objeto Mensaje manualmente para la simulación de ruteo
+    from src.mensaje import Mensaje
+    mensaje_ruteo = Mensaje(
+        remitente=usuario3.correo, 
+        destinatario=usuario2.correo, 
+        asunto="TEST: Simulación de Ruteo", 
+        cuerpo="Este mensaje va por el grafo.", 
+        es_urgente=False
+    )
+    
+    # 8.2. Simulación de Ruteo Óptimo (BFS)
+    print("\n- Usando BFS (Ruta más corta, ej: Servidor_A -> Servidor_B):")
+    # BFS debe elegir la ruta directa (A -> B) ya que tiene 1 salto, la más corta.
+    red_global.simular_envio_bfs("Servidor_A", usuario2.correo, mensaje_ruteo)
 
-    print("\n- Usando DFS (Ruta no necesariamente óptima, ej: A -> B):")
-    # DFS podría elegir A -> C -> B o A -> B, dependiendo del orden en el set de adyacencia
-    red_global.simular_envio_dfs("Servidor_A", "Servidor_B", mensaje_prueba)
+    # 8.3. Simulación de Ruteo DFS (Cualquier ruta)
+    print("\n- Usando DFS (Ruta no necesariamente óptima, ej: Servidor_A -> Servidor_B):")
+    # DFS podría elegir A -> C -> B (2 saltos) o A -> B (1 salto) dependiendo del set.
+    red_global.simular_envio_dfs("Servidor_A", usuario2.correo, mensaje_ruteo)
+    
+    # 8.4. Simulación de Entrega Local (TP a VE, ambos en Servidor_A)
+    IDGenerator._current_id += 1 
+    mensaje_local = Mensaje(
+        remitente=usuario3.correo, 
+        destinatario=usuario1.correo, 
+        asunto="TEST: Entrega Local", 
+        cuerpo="Este mensaje no sale del servidor.", 
+        es_urgente=False
+    )
+    print("\n- Usando BFS (Entrega Local: Servidor_A -> Servidor_A):")
+    red_global.simular_envio_bfs("Servidor_A", usuario1.correo, mensaje_local)
+    
+    # 8.5. Procesar Mensajes de Ruteo
+    print("\n--- Procesando Mensajes de Ruteo ---")
+    # Servidor B procesará el mensaje 0012 (Ruteo BFS) y el 0013 (Ruteo DFS).
+    # Servidor A procesará el mensaje 0014 (Entrega Local).
+    servidor_b.procesar_mensajes()
+    servidor_a.procesar_mensajes()

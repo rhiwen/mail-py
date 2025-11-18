@@ -35,7 +35,8 @@ La siguiente estructura de archivos mantiene el código organizado y modular. Ca
 │ ├── mensaje.py
 │ ├── carpeta.py
 │ ├── servidor_correo.py
-│ └── utilidades.py <-- nuevo
+│ ├── red_servidores.py (nuevo entrega 3)
+│ └── utilidades.py
 ├── main.py
 └── README.md
 

@@ -205,3 +205,32 @@ class Usuario(IEnviable, IRecibible):
 
         _recolectar_urgentes(self._raiz_de_carpetas)
         return mensajes_urgentes
+    
+    def buscar_ubicacion_mensaje(self, id_mensaje):
+        """
+        Busca un mensaje por ID en todo el árbol y devuelve una tupla:
+        (objeto_mensaje, ruta_absoluta_donde_esta)
+        Retorna (None, None) si no lo encuentra.
+        """
+        # Helper recursivo para rastrear la ruta
+        def _buscar_recur(carpeta_actual, ruta_acumulada):
+            # 1. Buscar en la carpeta actual
+            for msg in carpeta_actual._mensajes:
+                if msg.id == id_mensaje:
+                    return msg, ruta_acumulada
+            
+            # 2. Buscar en subcarpetas
+            for nombre_sub, obj_sub in carpeta_actual.subcarpetas.items():
+                # Construimos la ruta tipo "Padre/Hijo"
+                # Si la ruta acumulada está vacía, es solo el nombre, sino "Ruta/Nombre"
+                nueva_ruta = f"{ruta_acumulada}/{nombre_sub}" if ruta_acumulada else nombre_sub
+                
+                resultado_msg, resultado_ruta = _buscar_recur(obj_sub, nueva_ruta)
+                if resultado_msg:
+                    return resultado_msg, resultado_ruta
+            
+            return None, None
+
+        # Disparamos la búsqueda desde la raíz
+        # La raíz del usuario contiene las carpetas principales (Entrada, Enviados, etc.)
+        return _buscar_recur(self._raiz_de_carpetas, "")

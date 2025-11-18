@@ -180,3 +180,28 @@ class Usuario(IEnviable, IRecibible):
                 return True # El mensaje fue filtrado y ubicado.
                 
         return False # El mensaje no coincidió con ningún filtro.
+    
+    def obtener_mensajes_urgentes(self):
+        """
+        Recorre todas las carpetas buscando mensajes con prioridad alta (-1).
+        Utiliza la búsqueda recursiva interna para traer todo.
+        """
+        # Reutilizamos la lógica de buscar_mensajes de la carpeta raíz,
+        # pero como 'prioridad' no es un criterio de texto string, 
+        # vamos a hacer un truco: traer TODO y filtrar acá, 
+        # O (más eficiente) recorrer nosotros. 
+        
+        # Opción KISS: Recorreremos todo el árbol manualmente para filtrar por atributo int.
+        mensajes_urgentes = []
+        
+        # Función auxiliar recursiva local
+        def _recolectar_urgentes(carpeta):
+            for msg in carpeta._mensajes:
+                if msg.prioridad == -1: # -1 es Urgente según tu clase Mensaje
+                    mensajes_urgentes.append(msg)
+            
+            for sub in carpeta.subcarpetas.values():
+                _recolectar_urgentes(sub)
+
+        _recolectar_urgentes(self._raiz_de_carpetas)
+        return mensajes_urgentes

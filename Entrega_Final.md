@@ -1,5 +1,7 @@
 # Documentación Técnica - Entrega Final (Integración)
 
+[PPT ENTREGA 4 - Documentación del proyecto](https://www.canva.com/design/DAG4xe0nEQc/yEA8ZoNIkDYp3INzZDHoDA/view)
+
 ## 1. Adiciones y Cambios de la Entrega 4
 
 En esta etapa final nos enfocamos en la **orquestación** de todo el sistema. El backend ya estaba solido con las entregas anteriores (árboles, grafos, colas), pero faltaba una forma "humana" de usarlo.

@@ -16,6 +16,8 @@ Este proyecto es una implementación básica de un cliente de correo electrónic
 
 [PPT ENTREGA 3 - Documentación del proyecto](https://docs.google.com/presentation/d/14PAV8i9i2H9BU35z8-ooJhw7bBGSYDASnwuUJR_DeqA/edit?usp=sharing)
 
+[PPT ENTREGA 4 - Documentación del proyecto](https://www.canva.com/design/DAG4xe0nEQc/yEA8ZoNIkDYp3INzZDHoDA/view)
+
 ## Integrantes
 
 - Viviana Enriquez: vianquez5@gmail.com / vienriquez87@gmail.com (Github: DoomMetalLady)
